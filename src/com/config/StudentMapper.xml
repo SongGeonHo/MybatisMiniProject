@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.config.StudentMapper">
+
+    <!-- 1번 전체 학생 정보 조회-->
+<select id="findAll" resultType="StudentDTO">
+    select student_no,
+     department_no,
+     student_name,
+     concat(substring(student_SSN,1,7),substring(student_SSN,8,1),'******') as student_SSN,
+     concat(substring(student_address,1,10),'...') as student_address,
+     DATE_FORMAT(entrance_date,'%Y/%m/%d') as entrance_date,
+     absence_YN,
+     coach_Professor_No
+    from tb_student;
+</select>
+
+    <!-- 2번 학생 이름 조회 -->
+    <select id="findByName" resultType="StudentDTO" parameterType="String">
+        select student_no,
+        department_no,
+        student_name,
+        concat(substring(student_SSN,1,7),substring(student_SSN,8,1),'******') as student_SSN,
+        coalesce(concat(substring(student_address,1,10),'...'), '*** 주소 미상 ***') as student_address,
+        DATE_FORMAT(entrance_date,'%Y/%m/%d') as entrance_date,
+        absence_YN,
+        coach_Professor_No
+        from tb_student
+        where student_name Like concat( '%', #{student_name}, '%')
+    </select>
+
+    <!-- 3번 학생 입학년도 조회 -->
+    <select id="findEntranceYear" resultType="StudentDTO" parameterType="map">
+        select student_no,
+        department_no,
+        student_name,
+        concat(substring(student_SSN,1,7),substring(student_SSN,8,1),'******') as student_SSN,
+        coalesce(concat(substring(student_address,1,10),'...'), '*** 주소 미상 ***') as student_address,
+        DATE_FORMAT(entrance_date,'%Y/%m/%d') as entrance_date,
+        absence_YN,
+        coach_Professor_No
+        from tb_student
+        where YEAR(entrance_date) between #{startYear} and #{endYear}
+        order by entrance_date DESC
+    </select>
+
+    <!-- 4번 학생 학번 다중 조회 -->
+    <select id="findStudentNum" resultType="StudentDTO" parameterType="List">
+        select student_no,
+        department_no,
+        student_name,
+        concat(substring(student_SSN,1,7),substring(student_SSN,8,1),'******') as student_SSN,
+        coalesce(concat(substring(student_address,1,10),'...'), '*** 주소 미상 ***') as student_address,
+        DATE_FORMAT(entrance_date,'%Y/%m/%d') as entrance_date,
+        absence_YN,
+        coach_Professor_No
+        from tb_student
+        where student_no IN
+        <foreach item="student_no" collection="list" open="(" separator="," close=")">
+            #{student_no}
+        </foreach>
+    </select>
+
+    <!-- 5번 학생 휴학 일괄 수정 -->
+    <update id="updateStudentAbsence"  parameterType="list">
+        update tb_student
+        set absence_yn = 'Y'
+        where student_no IN
+    <foreach item="student_no" collection="list" open="(" separator="," close=")">
+        #{student_no}
+    </foreach>
+    </update>
+
+    <!-- 7번 학생 학점 조회 -->
+    <select id="findStudentGrade" resultType="StudentDetailsDTO" parameterType="String">
+        select s.student_no,
+            s.department_no,
+            s.student_name,
+            s.student_grade,
+            g.term_no,
+            g.point,
+            d.department_name
+        from tb_student s
+        JOIN tb_grade g
+        ON s.student_no = g.student_no
+        JOIN tb_department d
+        ON s.department_no = d.department_no
+        where
+        s.student_no = #{studentNum};
+    </select>
+
+    <select id="findWithPaging" resultType="StudentDTO" parameterType="map">
+        select student_no,
+        department_no,
+        student_name,
+        CONCAT(SUBSTRING(student_SSN, 1, 7), '******') AS student_SSN,
+        CONCAT(SUBSTRING(student_address, 1, 10), '...') AS student_address,
+        DATE_FORMAT(entrance_date, '%Y/%m/%d') AS entrance_date,
+        absence_YN,
+        coach_Professor_No
+        FROM
+        tb_student
+        ORDER BY student_no
+        LIMIT #{perPage} OFFSET #{skip}
+    </select>
+
+</mapper>
